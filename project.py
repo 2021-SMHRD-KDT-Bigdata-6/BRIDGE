@@ -14,13 +14,12 @@
 #     name: python3
 # ---
 
-# # 라이브러리 및 모델 불러오기
+# +
+# 라이브러리 및 모델 불러오기
 
 from flask import Flask ,render_template
 from flask import request, redirect
-from konlpy.tag import Komoran # 형태소 분석 라이브러리
-from konlpy.tag import Twitter # 형태소 분석 라이브러리
-from konlpy.tag import Kkma,Okt
+from konlpy.tag import Kkma,Okt, Twitter, Komoran # 형태소 분석 라이브러리
 from moviepy.editor import * # 영상을 오디오 파일로 변환
 from moviepy.editor import VideoFileClip, concatenate_videoclips
 import moviepy.editor as mp
@@ -41,10 +40,18 @@ from sklearn.feature_extraction.text import CountVectorizer
 # - 사용해야할 품사가 생각보다 많음 ( komoran 기준 ) 
 #   - 명사 NN -> 일반명사 NNG // 고유명사 NNP // 의존명사 NNB
 
+# 형태소 구분 함수
+def lemmatize(word):
+    morphtags = Komoran().pos(word)
+    if morphtags[0][1] == 'NNG' or morphtags[0][1] == 'NNP':
+        return morphtags[0][0]
 
 
-# +
-# https://www.youtube.com/watch?v=kFnHWpGs-18
+# + endofcell="--"
+
+# # +
+# https://www.youtube.com/watch?v=kFnHWpGs-18  :: 스마트 인재 개발원
+# https://www.youtube.com/watch?v=lZi3k_GzfCk  :: 서강대 2:25 ~ 4: 10
 youtube=input('다운로드 받을 유튜브 영상 링크 : ')
 
 yt = pytube.YouTube(youtube)
@@ -52,91 +59,124 @@ yt = pytube.YouTube(youtube)
 title = yt.title
 # -
 
+# --
 
+# + endofcell="--"
+
+
+# 영상 다운로드 경로
 
 stream = yt.streams.all()[0]
-stream.download(output_path='C:/Users/smhrd/Desktop/Machine Learning/test/data')
+stream.download(output_path='C:/Users/smhrd/Desktop/Machine Learning/test/data') 
 
-yt.title
-
-clip = mp.VideoFileClip("data/test1.3gpp")
-newsound = clip.subclip("00:01:10","00:01:30")
+# 영상 오디오 파일로 변환 
+clip = mp.VideoFileClip("data/python 01.3gpp")
+newsound = clip.subclip("00:01:10","00:01:30") # 20 sec
 newsound.audio.write_audiofile("data/audio5.wav",16000,2,2000,'pcm_s16le')
 
-# +
 # 오디오 파일 로드
 filename = "data/audio5.wav"
 
-r = sr.Recognizer()
-
+# 오디오 파일 텍스트 추출
 text = []
+r = sr.Recognizer()
 with sr.AudioFile(filename) as source:
     audio_data = r.record(source)
-    
     text = r.recognize_google(audio_data,language='ko-KR')
-    print(text)
+    # print(text)
 
-
-# +
-# 형태소 구분 함수
-def lemmatize(word):
-    morphtags = Komoran().pos(word)
-    if morphtags[0][1] == 'NNG' or morphtags[0][1] == 'NNP':
-        return morphtags[0][0]
-    
-
-
-# +
-word = '앞서 전화 드린 것처럼 지금부터 이른바 청와대 비서실 새로 지목된 최순실 관련 소식을 집중보도 하겠습니다 지난주 JTBC는 최순실 씨 최측근이라고 하는 고영태 씨를 주 대한 내용을 단독으로 보내 드렸습니다 최순실 씨가 유일하게 잘하는 것이 대통령 연설문 수정하는 것이다라는 내용이었는데요이 내용을 보도하자 청와대 이원종 비서실장은 정상적인 사람이면 믿을 수 있겠느냐 공부할 때도 있을 수 없는 얘기 다 이렇게 얘기 한 바 있습니다 JTBC가 몇 시에 말을 보도한 배경에는 사실 또 다른 믿기 어려운 정황이 있기 때문에 왔습니다 JTBC 취재팀은 최순실 씨 컴퓨터 입수해서 분석을 했습니다 태식아 대통령 연설문 에바다 봤다는 사실을 확인할 수 있었습니다 그런데 3시가 연설문 44개를 파일형태로 받은 실점을 너무도 대통령이 연설을 하기 의견이었습니다 먼저 김필중 기자의 단독 벌 벌 벌 이어가겠습니다 제수씨 사무실에 있던 pc에 저장된 파일들입니다 각종 문서도 가득합니다 파일은 모두 200여개의 일입니다 그런데 씨가 보관 중인 파일에 대부분이 청와대 와 관련된 내용이었습니다 기회 되면 특히 제시가 대통령 연설문 수정했다는 최초의 책은 고영태의 준수과 관련해 연설문의 주목했습니다 첼시가 갖고 있던 연설문 또는 공식 빠른한테 파일엔 모드 44개 없습니다 대선후보 시절에 박 대통령의 유선문의 비롯해 대통령 취임 연설문 드리기로 했습니다 그런데 최씨가 이문권 에바다 여러분 시장은 대통령이 실제 발언했던 것보다 길게는 4월이나 없었습니다 상당수 대통령 연설문 사전에 청와대 내부에서도 도움이 되지 않는다는 점을 감안하면 연설문이 사전에 청와대 아무거나 최씨에게 전달되었던 사실은 이른바 비선실세 놀란 거 관련해서 큰 날 것으로 보입니다 JTBC 김필 주입니다'
-
+# kss 활용 텍스트 문장 화
 word_list = kss.split_sentences(text)
 
-from collections import Counter
+# 명사만 가져오기 위한 삭제
+okt = Okt()
+headline = []
+stopwords = [ '의','가','이','은','들','는','좀','잘','걍','과','도','를','으로','자','에','와','등','으로도']
+for sentence in word_list:
+    temp = []
+    # morphs() : 형태소 단위로 토큰화
+    # stem = True : 형태소에서 어간을 추출
+    temp = okt.morphs(sentence, stem = True)
+    temp = [word for word in temp if not word in stopwords]
+    headline.append(temp)
+    
 
-okja = []
-
-for line in word_list:
-    okja.append(line)
-print(okja)
-
-print('------------------------------------------------------------')
-
+# konlpy 트위터 이용 형태소 분류
 twitter = Twitter()
 sentences_tag = []
-for i in okja:
-    morph= twitter.pos(i)
-    sentences_tag.append(morph)
-    
-print(sentences_tag)
+for word in headline:
+    for i in word :
+        morph = twitter.pos(i)
+        sentences_tag.append(morph)
+# print(sentences_tag)
 
 # -
 
+#  형태소 분류
 noun_adj_list=[]
 for i1 in sentences_tag:
     for word, tag in i1:
         if tag in ['Noun','Verb','Number','Adjective','Adverb']:
             noun_adj_list.append(word)
-print(noun_adj_list)
+# print(noun_adj_list)
 
+# 형태소 분류
 for i in range(len(noun_adj_list)):
-    morphtags = Komoran().pos(noun_adj_list[i])
-    print(noun_adj_list[i])
-    print('---------')
-    print(morphtags)
-    print('=========')
-    print(lemmatize(noun_adj_list[i])) # NNG, NNP
-
-# +
-for i in range(len(noun_adj_list)):
-    print(lemmatize(noun_adj_list[i]))
+    #print(lemmatize(noun_adj_list[i]))
     if lemmatize(noun_adj_list[i]) != None :
         noun_adj_list[i] = lemmatize(noun_adj_list[i])
         print(noun_adj_list)
-        
+
 arr_list = noun_adj_list
 print(arr_list)
 
  # 영상합치기 부분으로 넘어가기
+# --
+
+# +
+# 영상 합치기
+    
+clips = []
+for i in range(len(arr_list)):
+    # print("*****", clips)
+    try:
+        # arr_list = ['보고', '강의', '목표', '대해', '이야기', '하다', '다음', '수업', '부터', '본격', '적', '파이썬', '언어', '대한', '학습', '시작', '하다', '수', '있다', '파이썬', '언어', '설치', '하다', '과정', '보다', '교육', '점점', '중요하다', '이유', '소프트웨어', '미래', '사회', '요구', '하다', '용량', '속초', '발전']
+        mov = VideoFileClip("Data_Deep/30개영상/"+arr_list[i]+".mp4")
+        clips.append(mov)
+        print("try")
+    except:
+        print('skip')
+        
+    print("last", clips)
+final_clip = concatenate_videoclips(clips, method='compose') # concat함수를 이용해 비디오를 합치기
+final_clip.write_videofile("Success/sua5.mp4")
 # -
 
 
+
+# +
+# 테스트
+
+# 영상 다운로드 경로
+
+stream = yt.streams.all()[0]
+stream.download(output_path='C:/Users/smhrd/Desktop/Machine Learning/test/data') 
+
+# 영상 오디오 파일로 변환 
+clip = mp.VideoFileClip("data/python 01.3gpp")
+newsound = clip.subclip("00:01:10","00:01:30") # 20 sec
+newsound.audio.write_audiofile("data/audio5.wav",16000,2,2000,'pcm_s16le')
+
+# 오디오 파일 로드
+filename = "data/audio5.wav"
+
+# 오디오 파일 텍스트 추출
+text = []
+r = sr.Recognizer()
+with sr.AudioFile(filename) as source:
+    audio_data = r.record(source)
+    text = r.recognize_google(audio_data,language='ko-KR')
+    # print(text)
+
+# kss 활용 텍스트 문장 화
+word_list = kss.split_sentences(text)
