@@ -177,7 +177,11 @@ for i in range(len(wordData)):
     for j in range(1):
         jsonList.append(wordData.iloc[i,1])
         jsonList.append(wordData.iloc[i,2])
+        jsontuple = tuple(jsonList)
     wordList.append(jsonList)
+# -
+
+wordData.iloc[1,1:3]
 
 # +
 # 2차원 리스트 ( wordList )안에 샘플데이터 ( testList ) 가 있는지 확인
@@ -186,7 +190,7 @@ jsonlist = []
 for i in range(len(wordList)):
     if wordList[i][0] in testList:
         print(wordList[i][0])
-        jsonlist.append(wordList[i][1]) # 맞는 번호의 json파일 담기
+        jsonlist.append(wordList[i][1]) # 맞는 번호의 json파일 
 
 print(jsonlist)
 # -
@@ -197,25 +201,47 @@ print(jsonlist)
 #     json_data = json.load(f)  
 # print(json.dumps(json_data))  
 
-with open('Data_Deep/3000/'+jsonlist[i],'r',encoding='utf-8') as f:
-            json_data = json.load(f)
+wordData
+
+# +
+json_data = []
+jsonFileName2 = []
+
+for i in range(len(jsonlist)):
+    jsonMovieData = []
+    for j in range(1):
+        with open('Data_Deep/3000/'+jsonlist[i],'r',encoding='utf-8') as f:
+            json_data.append(json.load(f))
+        jsonMovieData.append(json_data[i]['metaData']['name'])
+        jsonMovieData.append(json_data[i]['data'][0]['start'])
+        jsonMovieData.append(json_data[i]['data'][0]['end'])
+    jsonFileName2.append(jsonMovieData)
+# -
+
+json_data[0]['data'][0]['attributes'][0]['name']
+
+jsonFileName2[0][0]
 
 # +
 jsonFileName=[]
+json_data=[]
 for i in range(len(jsonlist)):
     # 3. json파일 오픈
-    with open('Data_Deep/3000/'+jsonlist[i],'r',encoding='utf-8') as f:
-        json_data = json.load(f)
-        #print(json.dumps(json_data))
-    jsonFileName.append(json_data['metaData']['name'])
-    jsonName = json_data['data'][0]['attributes'][0]['name']
-    print(jsonFileName,'------' ,jsonName)
-    
+    jsonMovieData=[]
+    for j in range(1):
+        with open('Data_Deep/3000/'+jsonlist[i],'r',encoding='utf-8') as f:
+            json_data.append(json.load(f))
+            #print(json.dumps(json_data))
+            jsonMovieData.append(json_data[i]['metaData']['name'])
+            jsonMovieData.append(json_data[i]['data'][0]['start'])
+            jsonMovieData.append(json_data[i]['data'][0]['end'])
+    jsonFileName.append(jsonMovieData)
+        
+        
 clips = []
 try:
     for i in range(len(jsonFileName)):
-        mov = VideoFileClip('Data_Deep/Wordmp4/real_word_3000/'+jsonFileName[i])
-        mov = mov.subclip('00:00:01','00:00:04')
+        mov = VideoFileClip('Data_Deep/Wordmp4/real_word_3000/'+jsonFileName[i][0]).subclip(jsonFileName[i][1],jsonFileName[i][2])
         clips.append(mov)
         print('성공')
 except:
@@ -224,15 +250,6 @@ print('last',clips)
     
 final_clip = concatenate_videoclips(clips, method='compose')
 final_clip.write_videofile('Success/'+title+'.mp4')
-# +
-# 3-1 json 인덱싱
-# dict // key : value ?? list // array
-
-jsonFileName = json_data['metaData']['name']
-jsonName = json_data['data'][0]['attributes'][0]['name']
-print(jsonFileName,'------' ,jsonName)
-
-
 # +
 # dict // key : value ?? list // array
 
@@ -245,3 +262,5 @@ for i in range(len(arr_list)):
         mov = mov.subclip('00:00:01','00:00:04')
         clips.append[mov]
         
+# -
+
