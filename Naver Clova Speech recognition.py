@@ -45,7 +45,12 @@ from sklearn.feature_extraction.text import CountVectorizer
 # 위 도구는 빈도수 기반 벡터화 도구
 import requests
 import json
+# -
 
+yt.title
+
+
+# +
 # 형태소 분류 함수
 def lemmatize(word):
     morphtags = Komoran().pos(word)
@@ -136,49 +141,47 @@ app = Flask(__name__)
 def result():
     if request.method == 'POST' :
         result = request.form
-        
+        print(result)
         yt = pytube.YouTube(result.get('link'))
-        #print(yt.title)
+        print(yt.title)
         
         # 유튜브 영상 다운로드 후 저장
         stream = yt.streams.all()[0]
-        stream.download(output_path='C:/Users/smhrd/Desktop/Machine Learning/test/data')
+        stream.download(output_path='test/data')
         
         # 영상 제목
         title = yt.title
-        # 네이버 api 연동 및 경로 설정
-        res = ClovaSpeechClient().req_upload(file='C:/Users/smhrd/Desktop/Machine Learning/test/data/'+title+'.3gpp', completion='sync')
+        
+        res = ClovaSpeechClient().req_upload(file='test/data/'+title+'.3gpp', completion='sync')
         #print(res.text)
         
         # 전체 텍스트를 json 타입 변수에 저장
         # 텍스트 추출
         text = json.loads(res.text)
-        
+
         # kss 활용 텍스트 문장 화
         word_list = kss.split_sentences(text['text'])
-        
+
+        word_list=word_list[0:5]
         # 문장 끝 마침표 제거
-        last_list = [] # 문장 하나당 리스트 구축
+
         for i in range(len(word_list)):
-            last = []
-            last.append(word_list[i].replace('.',''))
-            last_list.append(last)
+            word_list[i]=word_list[i].replace('.','')
             
-        # 명사만 가져오기 위한 삭제
+            
+            # 명사만 가져오기 위한 삭제
         okt = Okt()
         headline = []
         stopwords = [ '의','가','이','은','들','는','좀','잘','걍','과','도','를','으로','자','에','와','등','으로도']
         for sentence in word_list:
-            for i in sentence:
-                temp = []
-                # morphs() : 형태소 단위로 토큰화
-                # stem = True : 형태소에서 어간을 추출
-                temp = okt.morphs(i, stem = True)
-                temp = [word for word in temp if not word in stopwords]
-                headline.append(temp)
+            temp = []
+            # morphs() : 형태소 단위로 토큰화
+            # stem = True : 형태소에서 어간을 추출
+            temp = okt.morphs(sentence, stem = True)
+            temp = [word for word in temp if not word in stopwords]
+            headline.append(temp)
 
-        # print(sentences_tag)
-        # konlpy 트위터 이용 형태소 분류
+           # konlpy 트위터 이용 형태소 분류
         twitter = Twitter()
         sentences_tag_last=[]
         for word in headline:
@@ -187,7 +190,7 @@ def result():
                 morph = twitter.pos(i)
                 sentences_tag.append(morph)
             sentences_tag_last.append(sentences_tag)
-        
+
         #  형태소 분류
         adj_list_last=[]
         for ko in sentences_tag_last:
@@ -197,7 +200,8 @@ def result():
                     if tag in ['Noun','Verb','Number','Adjective','Adverb','Alpha']:
                         noun_adj_list.append(word)
             adj_list_last.append(noun_adj_list)
-        
+
+        print(adj_list_last)
         # 형태소 분류
         for i in range(len(adj_list_last)):
             for j in range(len(adj_list_last[i])):
@@ -205,8 +209,11 @@ def result():
                         adj_list_last[i][j] = lemmatize(adj_list_last[i][j])
 
         arr_list = adj_list_last
-        arr_list
-        
+
+        wordCount=[]
+        for i in range(len(arr_list)):
+            for j in range(len(arr_list[i])):
+                wordCount.append(arr_list[i][j])
         # 영상 합치기
         # 데이터프레임 
         wordData=pd.read_csv('Data_Deep/word_data.csv')
@@ -224,19 +231,16 @@ def result():
         # 2차원 리스트 ( wordList )안에 샘플데이터 ( testList ) 가 있는지 확인
         jsonList2 = []
         for i in range(len(wordList)):
-            if wordList[i][0] in testList:
-                #print(wordList[i][0])
+            if wordList[i][0] in wordCount:
                 jsonList2.append(wordList[i][1]) # 맞는 번호의 json파일 
-
-        #print(jsonList2)
 
         jsonFileName=[]
         json_data=[]
-        for i in range(len(jsonlist)):
+        for i in range(len(jsonList2)):
             # 3. json파일 오픈
             jsonMovieData=[]
             for j in range(1):
-                with open('Data_Deep/3000/'+jsonlist[i],'r',encoding='utf-8') as f:
+                with open('Data_Deep/3000/'+jsonList2[i],'r',encoding='utf-8') as f:
                     json_data.append(json.load(f))
                     #print(json.dumps(json_data))
                     jsonMovieData.append(json_data[i]['metaData']['name'])
@@ -255,16 +259,187 @@ def result():
         except:
             print('skip')
         print('last',clips)
-
+        path = 'sua8.mp4'
         final_clip = concatenate_videoclips(clips, method='compose')
-        final_clip.write_videofile('Success/'+title+'.mp4')
+        final_clip.write_videofile('C:/Users/smhrd/git/BRIDGE_spring/Signal/src/main/webapp/WEB-INF/video/'+path)
+
         
-        path = 'Success/'+title+'.mp4'
-        return redirect("http://192.168.56.1:8082/TestFlask/result.jsp?link="+path)
+        return redirect("http://localhost:8082/web/detailpage?link="+path)
     
 if __name__ == '__main__':
     app.run(host= '61.80.106.115', port=3306)
 # -
+
+# # 테스트
+
+
+        # 네이버 api 연동 및 경로 설정
+res = ClovaSpeechClient().req_upload(file='C:/Users/smhrd/Desktop/Machine Learning/test/data/'+title+'.3gpp', completion='sync')
+
+file='C:/Users/smhrd/Desktop/Machine Learning/test/data/'+title+'.3gpp'
+print(yt.title)
+        
+
+# +
+
+# 전체 텍스트를 json 타입 변수에 저장
+# 텍스트 추출
+text = json.loads(res.text)
+
+# kss 활용 텍스트 문장 화
+word_list = kss.split_sentences(text['text'])
+
+word_list=word_list[0:5]
+word_list
+
+# 문장 끝 마침표 제거
+
+for i in range(len(word_list)):
+    
+    word_list[i]=word_list[i].replace('.','')
+
+    # 명사만 가져오기 위한 삭제
+okt = Okt()
+headline = []
+stopwords = [ '의','가','이','은','들','는','좀','잘','걍','과','도','를','으로','자','에','와','등','으로도']
+for sentence in word_list:
+    temp = []
+    # morphs() : 형태소 단위로 토큰화
+    # stem = True : 형태소에서 어간을 추출
+    temp = okt.morphs(sentence, stem = True)
+    temp = [word for word in temp if not word in stopwords]
+    headline.append(temp)
+
+   # konlpy 트위터 이용 형태소 분류
+twitter = Twitter()
+sentences_tag_last=[]
+for word in headline:
+    sentences_tag=[]
+    for i in word :
+        morph = twitter.pos(i)
+        sentences_tag.append(morph)
+    sentences_tag_last.append(sentences_tag)
+
+#  형태소 분류
+adj_list_last=[]
+for ko in sentences_tag_last:
+    noun_adj_list=[]
+    for i in ko:
+        for word, tag in i:
+            if tag in ['Noun','Verb','Number','Adjective','Adverb','Alpha']:
+                noun_adj_list.append(word)
+    adj_list_last.append(noun_adj_list)
+
+print(adj_list_last)
+# 형태소 분류
+for i in range(len(adj_list_last)):
+    for j in range(len(adj_list_last[i])):
+        if lemmatize(adj_list_last[i][j]) != None :
+                adj_list_last[i][j] = lemmatize(adj_list_last[i][j])
+
+arr_list = adj_list_last
+
+wordCount=[]
+for i in range(len(arr_list)):
+    for j in range(len(arr_list[i])):
+        wordCount.append(arr_list[i][j])
+# 영상 합치기
+# 데이터프레임 
+wordData=pd.read_csv('Data_Deep/word_data.csv')
+
+# 데이터프레임에 있는 json 과 단어를 뽑아서 2차원 리스트로 만들기
+wordList = []
+for i in range(len(wordData)):
+    jsonList=[]
+    for j in range(1):
+        jsonList.append(wordData.iloc[i,1])
+        jsonList.append(wordData.iloc[i,2])
+        jsontuple = tuple(jsonList)
+    wordList.append(jsontuple)
+
+# 2차원 리스트 ( wordList )안에 샘플데이터 ( testList ) 가 있는지 확인
+jsonList2 = []
+for i in range(len(wordList)):
+    if wordList[i][0] in wordCount:
+        jsonList2.append(wordList[i][1]) # 맞는 번호의 json파일 
+
+jsonFileName=[]
+json_data=[]
+for i in range(len(jsonList2)):
+    # 3. json파일 오픈
+    jsonMovieData=[]
+    for j in range(1):
+        with open('Data_Deep/3000/'+jsonList2[i],'r',encoding='utf-8') as f:
+            json_data.append(json.load(f))
+            #print(json.dumps(json_data))
+            jsonMovieData.append(json_data[i]['metaData']['name'])
+            jsonMovieData.append(json_data[i]['data'][0]['start'])
+            jsonMovieData.append(json_data[i]['data'][0]['end'])
+    jsonFileName.append(jsonMovieData)
+
+
+clips = []
+try:
+    for i in range(len(jsonFileName)):
+        mov = VideoFileClip('Data_Deep/Wordmp4/real_word_3000/'+jsonFileName[i][0]).subclip(jsonFileName[i][1],jsonFileName[i][2])
+        mov = mov.resize(height=1080,width=1920) # 크기 맞추기
+        clips.append(mov)
+        print('성공')
+except:
+    print('skip')
+print('last',clips)
+
+final_clip = concatenate_videoclips(clips, method='compose')
+final_clip.write_videofile('C:/Users/smhrd/Desktop/JavaScript/TestFlask/src/main/webapp/video/sua7.mp4')
+
+path = 'sua7.mp4'
+
+# +
+wordCount=[]
+for i in range(len(arr_list)):
+    for j in range(len(arr_list[i])):
+        wordCount.append(arr_list[i][j])
+        
+print(wordCount)
+# -
+
+arr_list
+
+# +
+
+# 문장 끝 마침표 제거
+last_list = [] # 문장 하나당 리스트 구축
+for i in range(len(word_list)):
+    last = []
+    last.append(word_list[i].replace('.',''))
+    last_list.append(last)
+
+# 명사만 가져오기 위한 삭제
+okt = Okt()
+headline = []
+stopwords = [ '의','가','이','은','들','는','좀','잘','걍','과','도','를','으로','자','에','와','등','으로도']
+for sentence in word_list:
+    for i in sentence:
+        temp = []
+        # morphs() : 형태소 단위로 토큰화
+        # stem = True : 형태소에서 어간을 추출
+        temp = okt.morphs(i, stem = True)
+        temp = [word for word in temp if not word in stopwords]
+        headline.append(temp)
+
+# konlpy 트위터 이용 형태소 분류
+twitter = Twitter()
+sentences_tag_last=[]
+for word in headline:
+    sentences_tag=[]
+    for i in word :
+        morph = twitter.pos(i)
+        sentences_tag.append(morph)
+    sentences_tag_last.append(sentences_tag)
+
+# -
+
+yt.streams.all()
 
 # ### 아래코드는 분할 테스트 및 가독용 코드
 
@@ -282,7 +457,8 @@ arr_list = adj_list_last
 arr_list
 # -
 
-
+text = json.loads(res.text)
+text['text']
 
 # #  코드 분할
 
@@ -401,7 +577,7 @@ final_clip = concatenate_videoclips(clips, method='compose')
 final_clip.write_videofile('Success/'+title+'.mp4')
 # -
 
-
+print(arr_list)
 
 
 
@@ -422,7 +598,6 @@ for i in range(len(listtext3)):
 
 last3_list
 
-# +
 testClip = mp.VideoFileClip('Success/python 02.mp4')
 testClip_resized = testClip.resize(height=360)
 testClip_resized.write_videofile('Success/python 02 resized.mp4')
